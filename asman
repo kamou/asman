@@ -12,9 +12,34 @@ except ImportError:
 
 class colors:
     BOLD = '\033[1m'
+    REGS = '\033[92m'
+    PC = '\033[91m'
+    STACK = '\033[93m'
+    EFLAGS = '\033[94m'
     END = '\033[0m'
 
 def x86(mn):
+    def colorize(s):
+        regs = ['eax', 'ax', 'al', 'ah', 'ebx', 'bx', 'bl', 'bh', 'ecx', 'cx', 'cl', 'ch', 'edx', 'dx', 'dl', 'dh', 'edi', 'di', 'esi', 'si']
+        pc = ['eip', 'ip']
+        stack = ['esp', 'sp', 'ebp']
+        eflags = ['CF', 'OF', 'PF', 'SF', 'ZF']
+        ns = str()
+        for word in s.split():
+            if (word.lower() in regs) or word.lower() in map(lambda x: x+',', regs):
+                ns = " ".join([ns, colors.REGS + word + colors.END])
+            elif word.lower() in pc or word.lower() in map(lambda x: x+',', pc):
+                ns = " ".join([ns, colors.PC + word + colors.END])
+            elif word.lower() in stack or word.lower() in map(lambda x: x+',', stack):
+                ns = " ".join([ns, colors.STACK + word + colors.END])
+            else:
+                for flag in eflags:
+                    if flag in word:
+                        nw = word.split(flag)
+                        ns = " ".join([ns, nw[0] + colors.EFLAGS + flag + colors.END + nw[1]])
+                        break
+                else: ns = " ".join([ns, word])
+        return ns.lstrip()
     main = "http://x86.renejeschke.de/"
     rmain = requests.get(main)
     h = HTMLParser()
@@ -37,13 +62,13 @@ def x86(mn):
                             if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
                                 msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
                                 break
-                        opcode = msub.group(1)
+                        opcode = colorize(h.unescape(msub.group(1)))
 
                         msub = re.search('<td class="grid"><code>(.*?)</code></td>', next(inst_iter_lines))
-                        mnemonic =  msub.group(1)
+                        mnemonic =  colorize(h.unescape(msub.group(1)))
 
                         msub = re.search('<td class="grid">(.*?)</td>', next(inst_iter_lines))
-                        desc =  msub.group(1)
+                        desc =  colorize(h.unescape(msub.group(1)))
                         print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
                     except StopIteration:
                         break
@@ -61,7 +86,7 @@ def x86(mn):
                     instl = next(inst_iter_lines)
                     if not instl.startswith("<p>") and not instl.endswith('</p>'):
                         break
-                    print h.unescape(instl[3:-4])
+                    print colorize(h.unescape(instl[3:-4]))
                 print
         else:
             m = re.search('<td><a href=".*?">(.*?)</a></td>'.format(mn), l)
