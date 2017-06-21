@@ -39,19 +39,10 @@ def x86(mn):
                                 break
                         opcode = msub.group(1)
 
-
-                        while True:
-                            instl = next(inst_iter_lines)
-                            if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
-                                msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
-                                break
+                        msub = re.search('<td class="grid"><code>(.*?)</code></td>', next(inst_iter_lines))
                         mnemonic =  msub.group(1)
 
-                        while True:
-                            instl = next(inst_iter_lines)
-                            if instl.startswith('<td class="grid">') and instl.endswith('</td>'):
-                                msub = re.search('<td class="grid">(.*?)</td>', instl)
-                                break
+                        msub = re.search('<td class="grid">(.*?)</td>', next(inst_iter_lines))
                         desc =  msub.group(1)
                         print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
                     except StopIteration:
