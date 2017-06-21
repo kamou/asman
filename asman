@@ -1,0 +1,69 @@
+#!/bin/python
+import requests
+import re
+import sys
+
+try:
+    # Python 2.6-2.7
+    from HTMLParser import HTMLParser
+except ImportError:
+    # Python 3
+    from html.parser import HTMLParser
+
+class colors:
+    BOLD = '\033[1m'
+    END = '\033[0m'
+
+def x86(mn):
+    main = "http://x86.renejeschke.de/"
+    rmain = requests.get(main)
+    mn = mn.upper()
+    if "jcc" in mn.lower():
+        mn = "Jcc"
+    h = HTMLParser()
+
+    for l in rmain.iter_lines():
+        m = re.search('<td><a href="(.*?)">.*{}.*</a></td>'.format(mn), l)
+        if m:
+            rsub = requests.get(main + m.group(1))
+            content = rsub.content
+            print colors.BOLD + "{:<18}  {:<24}  {:<12}".format("Opcode", "Mnemonic", "Description") + colors.END
+            while True:
+                try:
+                    msub = re.search('<td class="grid"><code>(.*?)</code></td>\n', content)
+                    opcode = msub.group(1)
+                    match_end = len(msub.group(0))
+                    index = content.index(msub.group(0))
+                    content = content[index+match_end:]
+
+                    msub = re.search('<td class="grid"><code>(.*?)</code></td>\n', content)
+                    mnemonic =  msub.group(1)
+                    match_end = len(msub.group(0))
+                    index = content.index(msub.group(0))
+                    content = content[index+match_end:]
+
+                    msub = re.search('<td class="grid">(.*?)</td>\n', content)
+                    desc =  msub.group(1)
+                    match_end = len(msub.group(0))
+                    index = content.index(msub.group(0))
+                    content = content[index+match_end:]
+                    print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
+                except:
+                    break
+            print "\n{}Details:{}".format(colors.BOLD, colors.END)
+            for line in content[content.index('<p>'):].split("\n"):
+                if not line.startswith("<p>"):
+                    break
+                print h.unescape(line[3:-4])
+
+            print
+
+if len(sys.argv) < 3:
+    print "Usage: asman arch instruction"
+    exit(1)
+
+arch = sys.argv[1]
+if arch == "x86":
+    x86(sys.argv[2])
+else:
+    print "Arch not yet supported"
