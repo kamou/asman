@@ -28,36 +28,44 @@ def x86(mn):
             m = re.search('<td><a href="(.*?)">.*{}.*</a></td>'.format(mn), l)
             if mn and m:
                 rsub = requests.get(main + m.group(1))
-                content = rsub.content
                 print colors.BOLD + "{:<18}  {:<24}  {:<12}".format("Opcode", "Mnemonic", "Description") + colors.END
-                while True:
-                    try:
-                        msub = re.search('<td class="grid"><code>(.*?)</code></td>\n', content)
-                        opcode = msub.group(1)
-                        match_end = len(msub.group(0))
-                        index = content.index(msub.group(0))
-                        content = content[index+match_end:]
+                inst_iter_lines = rsub.iter_lines()
+                for instl in inst_iter_lines:
+                    if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
+                        msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
+                    else: continue
+                    opcode = msub.group(1)
 
-                        msub = re.search('<td class="grid"><code>(.*?)</code></td>\n', content)
-                        mnemonic =  msub.group(1)
-                        match_end = len(msub.group(0))
-                        index = content.index(msub.group(0))
-                        content = content[index+match_end:]
 
-                        msub = re.search('<td class="grid">(.*?)</td>\n', content)
-                        desc =  msub.group(1)
-                        match_end = len(msub.group(0))
-                        index = content.index(msub.group(0))
-                        content = content[index+match_end:]
-                        print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
-                    except:
-                        break
+                    while True:
+                        instl = next(inst_iter_lines)
+                        if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
+                            msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
+                            break
+                    mnemonic =  msub.group(1)
+
+                    while True:
+                        instl = next(inst_iter_lines)
+                        if instl.startswith('<td class="grid">') and instl.endswith('</td>'):
+                            msub = re.search('<td class="grid">(.*?)</td>', instl)
+                            break
+                    desc =  msub.group(1)
+                    print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
+                inst_iter_lines = rsub.iter_lines()
+
                 print "\n{}Details:{}".format(colors.BOLD, colors.END)
-                for line in content[content.index('<p>'):].split("\n"):
-                    if not line.startswith("<p>"):
-                        break
-                    print h.unescape(line[3:-4])
-
+                for instl in inst_iter_lines:
+                    # Skip till
+                    while True:
+                        if instl != '<td class="instruction_set_reference_box">':
+                            instl = next(inst_iter_lines)
+                        else: break
+                    while True:
+                        instl = next(inst_iter_lines)
+                        if not instl.startswith("<p>") and not instl.endswith('</p>'):
+                            break
+                        print h.unescape(instl[3:-4])
+                    break
                 print
         else:
             m = re.search('<td><a href=".*?">(.*?)</a></td>'.format(mn), l)
