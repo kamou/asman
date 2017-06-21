@@ -30,42 +30,47 @@ def x86(mn):
                 rsub = requests.get(main + m.group(1))
                 print colors.BOLD + "{:<18}  {:<24}  {:<12}".format("Opcode", "Mnemonic", "Description") + colors.END
                 inst_iter_lines = rsub.iter_lines()
-                for instl in inst_iter_lines:
-                    if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
-                        msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
-                    else: continue
-                    opcode = msub.group(1)
+                while True:
+                    try:
+                        while True:
+                            instl = next(inst_iter_lines)
+                            if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
+                                msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
+                                break
+                        opcode = msub.group(1)
 
 
-                    while True:
-                        instl = next(inst_iter_lines)
-                        if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
-                            msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
-                            break
-                    mnemonic =  msub.group(1)
+                        while True:
+                            instl = next(inst_iter_lines)
+                            if instl.startswith('<td class="grid"><code>') and instl.endswith("</code></td>"):
+                                msub = re.search('<td class="grid"><code>(.*?)</code></td>', instl)
+                                break
+                        mnemonic =  msub.group(1)
 
-                    while True:
-                        instl = next(inst_iter_lines)
-                        if instl.startswith('<td class="grid">') and instl.endswith('</td>'):
-                            msub = re.search('<td class="grid">(.*?)</td>', instl)
-                            break
-                    desc =  msub.group(1)
-                    print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
+                        while True:
+                            instl = next(inst_iter_lines)
+                            if instl.startswith('<td class="grid">') and instl.endswith('</td>'):
+                                msub = re.search('<td class="grid">(.*?)</td>', instl)
+                                break
+                        desc =  msub.group(1)
+                        print "{:<18}  {:<24}  {:<12}".format(opcode, mnemonic, desc)
+                    except StopIteration:
+                        break
                 inst_iter_lines = rsub.iter_lines()
 
                 print "\n{}Details:{}".format(colors.BOLD, colors.END)
-                for instl in inst_iter_lines:
-                    # Skip till
-                    while True:
-                        if instl != '<td class="instruction_set_reference_box">':
-                            instl = next(inst_iter_lines)
-                        else: break
-                    while True:
-                        instl = next(inst_iter_lines)
-                        if not instl.startswith("<p>") and not instl.endswith('</p>'):
-                            break
-                        print h.unescape(instl[3:-4])
-                    break
+                # Skip till details
+                while True:
+                    instl = next(inst_iter_lines)
+                    if instl == '<td class="instruction_set_reference_box">':
+                        break
+
+                # print details
+                while True:
+                    instl = next(inst_iter_lines)
+                    if not instl.startswith("<p>") and not instl.endswith('</p>'):
+                        break
+                    print h.unescape(instl[3:-4])
                 print
         else:
             m = re.search('<td><a href=".*?">(.*?)</a></td>'.format(mn), l)
