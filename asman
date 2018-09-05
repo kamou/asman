@@ -40,7 +40,7 @@ def x86(mn):
                         break
                 else: ns = " ".join([ns, word])
         return ns.lstrip()
-    main = "http://x86.renejeschke.de/"
+    main = "https://c9x.me/x86"
     rmain = requests.get(main)
     h = HTMLParser()
 
@@ -52,7 +52,7 @@ def x86(mn):
                 mn = "Jcc"
             m = re.search('<td><a href="(.*?)">.*{}.*</a></td>'.format(mn), l)
             if mn and m:
-                rsub = requests.get(main + m.group(1))
+                rsub = requests.get(main + "/"+ m.group(1))
                 print colors.BOLD + "{:<18}  {:<24}  {:<12}".format("Opcode", "Mnemonic", "Description") + colors.END
                 inst_iter_lines = rsub.iter_lines()
                 while True:
